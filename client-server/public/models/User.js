@@ -1,141 +1,104 @@
 class User {
-
-  constructor(name, gender, birth, country, email, password, photo, admin, id){
-
-    this._id = id
-    this._name = name 
-    this._gender = gender 
-    this._birth = birth 
-    this._country = country 
-    this._email = email 
-    this._password = password 
-    this._photo = photo 
-    this._admin = admin 
-    this._register = new Date()
-
+  constructor(name, gender, birth, country, email, password, photo, admin, id) {
+    this._id = id;
+    this._name = name;
+    this._gender = gender;
+    this._birth = birth;
+    this._country = country;
+    this._email = email;
+    this._password = password;
+    this._photo = photo;
+    this._admin = admin;
+    this._register = new Date();
   }
 
-  get id(){
+  get id() {
     return this._id;
   }
 
-  get register(){
-    return this._register
+  get register() {
+    return this._register;
   }
 
-  get name(){
-    return this._name
+  get name() {
+    return this._name;
   }
 
-  get gender(){
-    return this._gender
+  get gender() {
+    return this._gender;
   }
 
-  get country(){
-    return this._country
+  get country() {
+    return this._country;
   }
 
-  get email(){
-    return this._email
+  get email() {
+    return this._email;
   }
 
-  get password(){
-    return this._password
+  get password() {
+    return this._password;
   }
 
-  get photo(){
-    return this._photo
+  get photo() {
+    return this._photo;
   }
 
-  set photo(value){
+  set photo(value) {
     this._photo = value;
   }
 
-  get admin(){
-    return this._admin
+  get admin() {
+    return this._admin;
   }
 
-  loadFromJSON(json){
-    for(let name in json){
-
-      switch(name){
+  loadFromJSON(json) {
+    for (let name in json) {
+      switch (name) {
         case "_register":
           this[name] = new Date(json[name]);
-        break;
+          break;
 
         default:
-          this[name] = json[name];
+          if(name.substring(0,1) === '_')this[name] = json[name];
       }
     }
   }
 
-  static getUsersStorage(){
-
-    let users = [];
-
-    if(localStorage.getItem("users")){
-      users = JSON.parse(localStorage.getItem("users"))
-
-    }
-
-    return users;
-
+  static getUsersStorage() {
+    return Fetch.get('/users');
   }
 
-  getNewID(){
 
-    let usersID = parseInt(localStorage.getItem('usersID'));
+  toJSON() {
+    let json = {};
 
-    if(!usersID > 0) usersID = 0;
-
-    usersID++;
-
-    localStorage.setItem('usersID', usersID)
-
-    return usersID;
-  }
-
-  save(){
-
-    let users = User.getUsersStorage()
-
-    if(this.id > 0){
-      users.map(u=>{
-
-        if(u._id == this.id){
-          Object.assign(u, this)
-        }
-
-        return u;
-      });
-
-
-    } else {
-      this._id = this.getNewID();
-
-      users.push(this);
-
-    }
-    
-    localStorage.setItem('users', JSON.stringify(users));
-
-  }
-
-  remove(){
-
-    let users = User.getUsersStorage()
-
-    users.forEach((userData, index)=>{
-
-      if(this._id == userData._id) {
-        users.splice(index, 1);
-      }
-
+    Object.keys(this).forEach((key) => {
+      if (this[key] !== undefined) json[key] = this[key];
     });
-
-    localStorage.setItem('users', JSON.stringify(users));
-
+    return json;
   }
 
+  save() {
+    return new Promise((resolve, reject) => {
+      let promise;
 
+      if (this.id) {
+        promise = Fetch.put(`/users/${this.id}`, this.toJSON());
+      } else {
+        promise = Fetch.post(`/users`, this.toJSON());
+      }
+      promise.then((data) => {
+        this.loadFromJSON(data);
+
+        resolve(this);
+      }).catch (e=>{
+        reject(e)
+      });
+    });
+  }
+
+  remove() {
+   return Fetch.delete(`/users/${this.id}`)
+  }
 }

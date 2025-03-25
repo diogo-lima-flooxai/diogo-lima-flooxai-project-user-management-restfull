@@ -1,7 +1,7 @@
 class HttpRequest {
 
   static get(url, params = {}){
-    return HttpRequest.request('GET',url, params);
+    return HttpRequest.request('GET', url, params);
   }
 
   static delete(url, params = {}){
@@ -37,7 +37,9 @@ class HttpRequest {
         }
         resolve(obj);
       };
-      ajax.send();
+
+      ajax.setRequestHeader('Content-Type', 'application/json')
+      ajax.send(JSON.stringify(params));
     });
   }
 }

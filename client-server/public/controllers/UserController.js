@@ -41,20 +41,20 @@ class UserController {
             result._photo = content;
           }
 
-          let user = new User()
+          let user = new User();
 
           user.loadFromJSON(result);
 
-          user.save();
+          user.save().then(user=>{
+            this.getTr(user, tr);
 
-          this.getTr(user,tr)
-
-          this.updateCount();
-
-          this.formUpdateEl.reset();
-          btn.disabled = false;
-
-          this.showPanelCreate();
+            this.updateCount();
+  
+            this.formUpdateEl.reset();
+            btn.disabled = false;
+  
+            this.showPanelCreate();
+          });
         },
         (e) => {
           console.error(e);
@@ -78,11 +78,11 @@ class UserController {
       this.getPhoto(this.formEl).then(
         (content) => {
           values.photo = content;
-          values.save();
-
-          this.addLine(values);
-          this.formEl.reset();
-          btn.disabled = false;
+          values.save().then((user) => {
+            this.addLine(user);
+            this.formEl.reset();
+            btn.disabled = false;
+          });
         },
         (e) => {
           console.error(e);
@@ -159,24 +159,19 @@ class UserController {
     );
   }
 
-  selectAll(){
+  selectAll() {
 
-    HttpRequest.get('/users').then(data=>{
-
-      data.users.forEach(dataUser=>{
-
+    User.getUsersStorage().then(data => {
+      data.users.forEach(dataUser => {
         let user = new User();
         user.loadFromJSON(dataUser);
-  
-        this.addLine(user);
-  
-      });
 
+        this.addLine(user);
+      });
     });
-  };
+  }
 
   addLine(dataUser) {
-    
     let tr = this.getTr(dataUser);
 
     this.tableEl.appendChild(tr);
@@ -184,11 +179,10 @@ class UserController {
     this.updateCount();
   }
 
-  getTr(dataUser, tr = null){
-
+  getTr(dataUser, tr = null) {
     if (tr === null) tr = document.createElement("tr");
 
-    tr.dataset.user = JSON.stringify(dataUser);  
+    tr.dataset.user = JSON.stringify(dataUser);
 
     tr.innerHTML = `
       <td><img src="${
@@ -203,24 +197,24 @@ class UserController {
           <button type="button" class="btn btn-danger btn-delete btn-xs btn-flat">Excluir</button>
       </td>`;
 
-      this.addEventsTr(tr);
+    this.addEventsTr(tr);
 
-      return tr;
+    return tr;
   }
 
   addEventsTr(tr) {
     tr.querySelector(".btn-delete").addEventListener("click", (e) => {
       if (confirm("Deseja realmente excluir ?")) {
-
         let user = new User();
 
         user.loadFromJSON(JSON.parse(tr.dataset.user));
 
-        user.remove();
+        user.remove().then(data=>{
+          tr.remove();
 
-        tr.remove();
+          this.updateCount();
+        });
 
-        this.updateCount();
       }
     });
 
